@@ -16,10 +16,12 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 
 import { Link } from "lucide-react";
+import DialogEditItem from "./DialogEditItem";
 
 interface LinkProps {
   url: string;
   categories?: string[];
+  id: number;
 }
 
 export default function Homepage({
@@ -30,33 +32,38 @@ export default function Homepage({
   onUpdateLink: (updatedLink: LinkProps, index: number) => void;
 }) {
   const [linkToEdit, setLinkToEdit] = useState<string>("");
-  const [folderToEdit, setFolderToEdit] = useState<string>("");
+  const [categoriesToEdit, setCategoriesToEdit] = useState<string>("");
 
-  const handleEditClick = (index: number) => {
-    const link = links[index]; // find the link from array based on edit TODO: add id as key
-    setLinkToEdit(link.url);
-    setFolderToEdit(link.categories ? link.categories.join(", ") : "");
+  const handleEditClick = (id: number) => {
+    const link = links.find((link) => link.id === id); // find the link from array based on edit TODO: add id as key
+    if (link) {
+      setLinkToEdit(link.url);
+      setCategoriesToEdit(link.categories ? link.categories.join(", ") : "");
+    }
   };
 
-  const editLink = (index: number) => {
+  const editLink = (id: number) => {
     // Logic to edit the link
     const updatedLink: LinkProps = {
       url: linkToEdit,
-      categories: folderToEdit.split(", ").map((f) => f.trim()),
+      categories: categoriesToEdit.split(", ").map((f) => f.trim()),
+      id: id,
     };
-    onUpdateLink(updatedLink, index);
+    onUpdateLink(updatedLink, id);
   };
 
   return (
     <div className="homepage">
       {links.map((link, index) => (
-        <div key={index}>
-          {link.categories?.map((category, i) => (
-            <Badge key={i} variant="outline" className="mr-1">
-              {category}
-            </Badge>
-          ))}
-          <div key={index} className="flex justify-between items-center">
+        <div key={link.id}>
+          {link.categories && link.categories.length > 0
+            ? link.categories.map((category, i) => (
+                <Badge key={i} variant="outline" className="mr-1">
+                  {category}
+                </Badge>
+              ))
+            : null}
+          <div key={link.id} className="flex justify-between items-center">
             <a href={link.url}>{link.url}</a>
             {/* <p>{link.categories?.join(", ")}</p> */}
 
@@ -68,7 +75,7 @@ export default function Homepage({
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={() => handleEditClick(index)}
+                    onClick={() => handleEditClick(link.id)}
                   >
                     Edit
                   </Button>
@@ -96,8 +103,8 @@ export default function Homepage({
                       <Input
                         id="folder-1"
                         name="folder"
-                        value={folderToEdit}
-                        onChange={(e) => setFolderToEdit(e.target.value)}
+                        value={categoriesToEdit}
+                        onChange={(e) => setCategoriesToEdit(e.target.value)}
                       />
                     </div>
                   </div>
@@ -106,7 +113,7 @@ export default function Homepage({
                       <Button variant="outline">Cancel</Button>
                     </DialogClose>
                     <DialogClose asChild>
-                      <Button type="submit" onClick={() => editLink(index)}>
+                      <Button type="submit" onClick={() => editLink(link.id)}>
                         Save changes
                       </Button>
                     </DialogClose>
