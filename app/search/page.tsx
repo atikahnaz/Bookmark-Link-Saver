@@ -16,11 +16,6 @@ export default function SearchPage() {
     metadata?: Metadata;
   }
 
-  interface FolderProps {
-    id: number;
-    name: string;
-  }
-
   interface Metadata {
     title?: string;
     description?: string;
@@ -29,8 +24,6 @@ export default function SearchPage() {
     canEmbed?: boolean;
   }
 
-  // TODO:
-  // seach based on bookmark and category
   const [searchBookmarksWords, setSearchBookmarksWords] = useState<string>("");
   const [searchCategories, setSearchCategories] = useState<string>("");
   const [listBookmarks, setListBookmarks] = useState<LinkProps[]>([]);
@@ -39,7 +32,6 @@ export default function SearchPage() {
   const { bookmarks } = useBookmarks();
 
   const onOpenSheet = (url: string) => {
-    console.log("Opening sheet with URL:", url);
     setUrlSheetPage(url);
     setOpenSheet(true);
   };
@@ -47,20 +39,42 @@ export default function SearchPage() {
   // TODO: run function to search bookmarks
   const searchBookmarks = () => {
     const queryWords = searchBookmarksWords.toLowerCase().trim();
-    console.log(queryWords, "query");
-    const bookmarksExists = bookmarks.filter((bookmark) => {
-      return (
-        bookmark.metadata?.title?.toLowerCase().includes(queryWords) ||
-        bookmark.metadata?.description?.toLowerCase().includes(queryWords) ||
-        bookmark.url.toLowerCase().includes(queryWords)
-      );
-    });
-    setListBookmarks(bookmarksExists);
-    console.log(bookmarksExists, "Bookmark Exists");
-    if (listBookmarks.length === 0) {
-      console.log(listBookmarks.length);
-      return <div>not found</div>;
+    const queryCategory = searchCategories.toLowerCase().trim();
+
+    const searchWords = () => {
+      return bookmarks.filter((bookmark) => {
+        return (
+          bookmark.metadata?.title?.toLowerCase().includes(queryWords) ||
+          bookmark.metadata?.description?.toLowerCase().includes(queryWords) ||
+          bookmark.url.toLowerCase().includes(queryWords)
+        );
+      });
+    };
+
+    const searchCategory = () => {
+      return bookmarks.filter((bookmark) => {
+        return bookmark.categories?.some((cat) =>
+          cat.toLowerCase().includes(queryCategory),
+        );
+      });
+    };
+
+    const searchWordsAndCat = () => {
+      const wordsResults = searchWords();
+      const categoryResults = searchCategory();
+      return wordsResults.filter((r) => categoryResults.includes(r));
+    };
+
+    let results: LinkProps[] = [];
+    if (queryWords && queryCategory) {
+      results = searchWordsAndCat();
+    } else if (queryWords) {
+      results = searchWords();
+    } else if (queryCategory) {
+      results = searchCategory();
     }
+
+    setListBookmarks(results);
   };
 
   return (
@@ -73,16 +87,21 @@ export default function SearchPage() {
             placeholder="Search"
             value={searchBookmarksWords}
             onChange={(e) => setSearchBookmarksWords(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                searchBookmarks();
-              }
-            }}
+            // onKeyDown={(e) => {
+            //   if (e.key === "Enter") {
+            //     searchBookmarks();
+            //   }
+            // }}
           />
         </Field>
         <Field>
           <FieldLabel htmlFor="last-name">Categories</FieldLabel>
-          <Input id="last-name" placeholder="categories" />
+          <Input
+            id="last-name"
+            placeholder="categories"
+            value={searchCategories}
+            onChange={(e) => setSearchCategories(e.target.value)}
+          />
         </Field>
         <Field className="justify-end">
           <Button onClick={searchBookmarks}>Search</Button>
