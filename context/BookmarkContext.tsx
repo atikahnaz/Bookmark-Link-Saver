@@ -1,6 +1,5 @@
 "use client";
 
-import { error } from "console";
 import { createContext, useContext, useState, useEffect } from "react";
 
 interface LinkProps {
@@ -8,11 +7,20 @@ interface LinkProps {
   categories?: string[];
   id: number;
   foldersId?: number[];
+  metadata?: Metadata;
 }
 
 interface FolderProps {
   id: number;
   name: string;
+}
+
+interface Metadata {
+  title?: string;
+  description?: string;
+  image?: string;
+  icon?: string;
+  canEmbed?: boolean;
 }
 
 interface BookmarkContextType {
@@ -31,7 +39,7 @@ export type AddFolderResult =
   | { success: true }
   | { success: false; error: "FOLDER_EXISTS" };
 
-type UpdateFolderResult =
+export type UpdateFolderResult =
   | { success: true }
   | { success: false; error: "FOLDER_EXISTS" };
 
@@ -55,10 +63,9 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({
       const savedBookmarks = localStorage.getItem(STORAGE_KEY);
       if (savedBookmarks) {
         setBookmarks(JSON.parse(savedBookmarks));
-        console.log("Loaded bookmarks from localStorage:", savedBookmarks);
       }
     } catch (error) {
-      console.error("Failed to load bookmarks from localStorage:", error);
+      // console.error("Failed to load bookmarks from localStorage:", error);
     }
     setIsLoaded(true);
   }, []);
@@ -67,12 +74,12 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     try {
       const savedFolders = localStorage.getItem(FOLDER_STORAGE_KEY);
-      console.log("Loaded folders from localStorage:", savedFolders);
+      // console.log("Loaded folders from localStorage:", savedFolders);
       if (savedFolders) {
         setFolders(JSON.parse(savedFolders));
       }
     } catch (error) {
-      console.error("Failed to load folders from localStorage:", error);
+      // console.error("Failed to load folders from localStorage:", error);
     }
   }, []);
 
@@ -80,11 +87,10 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (isLoaded) {
       try {
-        console.log("is loaded ");
         localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
-        console.log(bookmarks);
+        // console.log(bookmarks);
       } catch (error) {
-        console.error("Failed to save bookmarks to localStorage:", error);
+        //console.error("Failed to save bookmarks to localStorage:", error);
       }
     }
   }, [bookmarks, isLoaded]);
@@ -99,13 +105,68 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [folders]);
 
-  const addBookmark = (bookmark: LinkProps) => {
-    setBookmarks((prev) => [bookmark, ...prev]);
+  const fetchMetadata = async (url: string) => {
+    try {
+      const response = await fetch("/api/metadata", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      // Check if website can be embedded in iframe based on response headers, and if not, set metadata to display message that preview is not available
+      const xFrameOptions = response.headers.get("X-Frame-Options");
+      const csp = response.headers.get("Content-Security-Policy");
+      const canEmbed =
+        !xFrameOptions && (!csp || !csp.includes("frame-ancestors"));
+
+      return {
+        title: data.title,
+        description: data.description,
+        image: data.image,
+        icon: data.icon,
+        canEmbed: canEmbed,
+      };
+    } catch (error) {
+      console.error("Error fetching metadata:", error);
+      return {};
+    }
   };
 
-  const updateBookmark = (updatedBookmark: LinkProps, id: number) => {
+  const addBookmark = async (bookmark: LinkProps) => {
+    const metadata = await fetchMetadata(bookmark.url);
+    const newBookmark: LinkProps = {
+      ...bookmark,
+      metadata: {
+        title: metadata.title || bookmark.url,
+        description: metadata.description || "",
+        image: metadata.image || "",
+        icon: metadata.icon || "",
+        canEmbed: metadata.canEmbed,
+      },
+    };
+    setBookmarks((prev) => [newBookmark, ...prev]);
+  };
+
+  const updateBookmark = async (updatedBookmark: LinkProps, id: number) => {
+    const metadata = await fetchMetadata(updatedBookmark.url);
+    const newUpdatedBookmark: LinkProps = {
+      ...updatedBookmark,
+      metadata: {
+        title: metadata.title || updatedBookmark.url,
+        description: metadata.description || "",
+        image: metadata.image || "",
+        icon: metadata.icon || "",
+        canEmbed: metadata.canEmbed,
+      },
+    };
     setBookmarks((prev) =>
-      prev.map((bookmark) => (bookmark.id === id ? updatedBookmark : bookmark)),
+      prev.map((bookmark) =>
+        bookmark.id === id ? newUpdatedBookmark : bookmark,
+      ),
     );
   };
 
@@ -127,7 +188,7 @@ export const BookmarkProvider: React.FC<{ children: React.ReactNode }> = ({
     return { success: true };
   };
 
-  const updateFolder = (updatedFolder: FolderProps) => {
+  const updateFolder = (updatedFolder: FolderProps): UpdateFolderResult => {
     // Handle same name folder
     const folderExist = folders.some(
       (f) =>
