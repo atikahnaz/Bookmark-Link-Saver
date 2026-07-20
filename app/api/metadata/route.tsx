@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const { url } = await request.json();
     const metadata = await metaScraper(url);
     return NextResponse.json({
-      title: metadata.title || "",
+      title: metadata.title || new URL(url).hostname,
       description: metadata.description || "",
       image: metadata.image || "",
       icon: metadata.icon || "",
