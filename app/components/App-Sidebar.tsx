@@ -193,7 +193,9 @@ export function AppSidebar() {
       />
       <Sidebar>
         <SidebarHeader>
-          <h1>Bookmark Manager</h1>
+          <h1 className="ml-2 text-xl font-semibold tracking-tight text-balance">
+            Bookmark Manager
+          </h1>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
@@ -322,10 +324,6 @@ export function AppSidebar() {
                         folderEditName.trim()
                       ) {
                         handleUpdateFolder(selectedFolderId, folderEditName);
-                        // updateFolder(
-                        //   { id: selectedFolderId, name: folderEditName },
-                        //   selectedFolderId,
-                        // );
                       }
                       setOpenEditFolder(false);
                     }}
