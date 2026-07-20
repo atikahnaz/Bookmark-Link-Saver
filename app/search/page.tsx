@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -35,6 +35,10 @@ export default function SearchPage() {
     setUrlSheetPage(url);
     setOpenSheet(true);
   };
+
+  useEffect(() => {
+    setListBookmarks(bookmarks);
+  }, [bookmarks]);
 
   // TODO: run function to search bookmarks
   const searchBookmarks = () => {
@@ -72,6 +76,8 @@ export default function SearchPage() {
       results = searchWords();
     } else if (queryCategory) {
       results = searchCategory();
+    } else {
+      results = bookmarks;
     }
 
     setListBookmarks(results);
@@ -87,11 +93,11 @@ export default function SearchPage() {
             placeholder="Search"
             value={searchBookmarksWords}
             onChange={(e) => setSearchBookmarksWords(e.target.value)}
-            // onKeyDown={(e) => {
-            //   if (e.key === "Enter") {
-            //     searchBookmarks();
-            //   }
-            // }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                searchBookmarks();
+              }
+            }}
           />
         </Field>
         <Field>
@@ -101,23 +107,24 @@ export default function SearchPage() {
             placeholder="categories"
             value={searchCategories}
             onChange={(e) => setSearchCategories(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                searchBookmarks();
+              }
+            }}
           />
         </Field>
         <Field className="justify-end">
           <Button onClick={searchBookmarks}>Search</Button>
         </Field>
       </FieldGroup>
-      <div>
+      <div className="mt-4">
         {listBookmarks.length === 0 ? (
-          <div className="mt-4">Not found</div>
+          <div>Not found</div>
         ) : (
           listBookmarks.map((bookmark) => (
             <div key={bookmark.id} className="">
-              <UrlItem
-                link={bookmark}
-                links={bookmarks}
-                onOpenSheet={onOpenSheet}
-              ></UrlItem>
+              <UrlItem link={bookmark} onOpenSheet={onOpenSheet}></UrlItem>
 
               {/* Open sheetpage at right */}
               <SheetPage
