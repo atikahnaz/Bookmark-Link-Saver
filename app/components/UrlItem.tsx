@@ -57,47 +57,41 @@ interface LinkProps {
   categories?: string[];
   id: number;
   foldersId?: number[];
+  metadata?: Metadata;
 }
 
 interface Metadata {
-  title: string;
-  description: string;
-  image: string;
-  icon: string;
-  canEmbed: boolean;
+  title?: string;
+  description?: string;
+  image?: string;
+  icon?: string;
+  canEmbed?: boolean;
 }
 
 export default function UrlItem({
   link,
-  links,
   onOpenSheet,
 }: {
   link: LinkProps;
-  links: LinkProps[];
   onOpenSheet: (url: string) => void;
 }) {
   const [linkToEdit, setLinkToEdit] = useState<string>("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState<string>("");
-  const { updateBookmark, deleteBookmark, folders, addFolder } = useBookmarks();
+  const [folder, setFolder] = useState<number[]>([]);
+  const { bookmarks, updateBookmark, deleteBookmark, folders, addFolder } =
+    useBookmarks();
   const [selectionFolders, setSelectionFolders] = useState<string[]>([]);
-  const [metadata, setMetadata] = useState<Metadata>({
-    title: "",
-    description: "",
-    image: "",
-    icon: "",
-    canEmbed: true,
-  });
   const [open, setOpen] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [loaded, setLoaded] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleEditClick = (id: number) => {
-    const link = links.find((link) => link.id === id); // find the link from array based on edit TODO: add id as key
+    const link = bookmarks.find((link) => link.id === id); // find the link from array based on edit TODO: add id as key
     if (link) {
       setLinkToEdit(link.url);
       const categories = link.categories ? link.categories : [];
       setSelectedCategories(categories);
+      setFolder(link.foldersId || []);
     }
   };
 
@@ -107,6 +101,7 @@ export default function UrlItem({
       url: linkToEdit,
       categories: selectedCategories,
       id: id,
+      foldersId: folder,
     };
     updateBookmark(updatedLink, id); // update bookmark in context
   };
@@ -160,46 +155,6 @@ export default function UrlItem({
     updateBookmark(updatedLink, id); // update bookmark in context
   };
 
-  // Display metadata when loading the page, and update when url is edited
-  async function fetchMetadata(url: string) {
-    try {
-      setLoading(true);
-      setLoaded(false);
-      const response = await fetch("/api/metadata", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ url }),
-      });
-
-      const data = await response.json();
-
-      // Check if website can be embedded in iframe based on response headers, and if not, set metadata to display message that preview is not available
-      const xFrameOptions = response.headers.get("X-Frame-Options");
-      const csp = response.headers.get("Content-Security-Policy");
-      const canEmbed =
-        !xFrameOptions && (!csp || !csp.includes("frame-ancestors"));
-
-      setMetadata({
-        title: data.title,
-        description: data.description,
-        image: data.image,
-        icon: data.icon,
-        canEmbed: canEmbed,
-      });
-    } catch (error) {
-      console.error("Error fetching metadata:", error);
-    }
-    setLoading(false);
-    setLoaded(true);
-    console.log("Metadata fetched:", metadata);
-  }
-
-  React.useEffect(() => {
-    fetchMetadata(link.url);
-  }, [link.url]);
-
   const anchor = useComboboxAnchor();
 
   // Loading skeleton while fetching metadata
@@ -218,49 +173,50 @@ export default function UrlItem({
   return (
     <div key={link.id}>
       <div key={link.id} className="flex justify-between items-center">
-        <div>
+        <div className="flex-1 w-1/2">
           {/* Open sheet preview when bookmark is clicked */}
           <div
             className="flex items-center gap-2 my-1.5 cursor-pointer"
             onClick={() => {
-              if (metadata.canEmbed) {
-                console.log(metadata.canEmbed);
+              if (link.metadata?.canEmbed) {
+                console.log(link.metadata?.canEmbed);
                 onOpenSheet(link.url); // callback function to open sheet page with url
               } else {
                 window.open(link.url, "_blank"); // open in new tab if cannot embed
               }
             }}
           >
-            {metadata.icon && (
-              <img src={metadata.icon} alt="icon" width={20} height={20} />
+            {link.metadata?.icon && (
+              <img
+                src={link.metadata?.icon}
+                alt="icon"
+                width={20}
+                height={20}
+              />
             )}
-            <h2 className="ml-1.5 text-lg font-semibold">{metadata.title}</h2>
+            <h2 className="ml-1.5 text-lg font-semibold">
+              {link.metadata?.title}
+            </h2>
           </div>
 
-          <p className="text-muted-foreground text-sm">
-            {metadata.description}
-          </p>
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 text-sm hover:underline"
-          >
-            {link.url}
-          </a>
+          <div>
+            <p className="text-muted-foreground text-sm">
+              {link.metadata?.description}
+            </p>
+            <a
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 text-sm hover:underline wrap-break-word"
+            >
+              {link.url}
+            </a>
+          </div>
         </div>
 
         {/* Edit Link Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
           <form>
-            {/* <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={() => handleEditClick(link.id)}
-              >
-                Edit
-              </Button>
-            </DialogTrigger> */}
             <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Edit Link</DialogTitle>
@@ -332,6 +288,7 @@ export default function UrlItem({
           </form>
         </Dialog>
 
+        {/* Section for add folder, edit bookmark and delete bookmark */}
         <div className="flex gap-2">
           {/* Save bookmark to Folder Dialog*/}
           <Dialog>

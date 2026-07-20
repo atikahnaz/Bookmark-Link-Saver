@@ -4,12 +4,6 @@ import { useBookmarks } from "@/context/BookmarkContext";
 import SheetPage from "./SheetPage";
 import UrlItem from "./UrlItem";
 
-interface LinkProps {
-  url: string;
-  categories?: string[];
-  id: number;
-}
-
 export default function Homepage() {
   const [urlSheetPage, setUrlSheetPage] = useState<string>("");
   const [openSheet, setOpenSheet] = useState<boolean>(false);
@@ -24,12 +18,8 @@ export default function Homepage() {
   return (
     <div className="">
       {bookmarks.map((bookmark) => (
-        <div key={bookmark.id} className="">
-          <UrlItem
-            link={bookmark}
-            links={bookmarks}
-            onOpenSheet={onOpenSheet}
-          ></UrlItem>
+        <div key={bookmark.id}>
+          <UrlItem link={bookmark} onOpenSheet={onOpenSheet}></UrlItem>
 
           {/* Open sheetpage at right */}
           <SheetPage

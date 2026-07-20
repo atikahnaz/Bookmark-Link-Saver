@@ -35,15 +35,17 @@ export default function Content({ folder }: { folder: number }) {
 
   return (
     <div>
-      <h2>Folder: {folderName}</h2>
+      <h2 className="scroll-m-20 text-2xl font-semibold tracking-tight">
+        Folder: {folderName}
+      </h2>
 
-      <div className="">
+      <div className="mt-4">
         {/* <DialogEditUrl links={links} onUpdateLink={onUpdateLink}></DialogEditUrl> */}
         {bookmarksInFolder.map((bookmark, index) => (
           <div key={index}>
             <UrlItem
               link={bookmark}
-              links={bookmarks}
+              // links={bookmarks}
               onOpenSheet={onOpenSheet}
               // onUpdateLink={onUpdateLink}
             ></UrlItem>

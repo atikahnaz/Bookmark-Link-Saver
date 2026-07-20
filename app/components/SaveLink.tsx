@@ -49,7 +49,6 @@ export function AlertDialogFail({
 
 export default function SaveLink() {
   const [url, setUrl] = useState<string>("");
-  const [categories, setCategories] = useState<string[]>([]);
   const { addBookmark } = useBookmarks();
   const [openErrorAlert, setOpenErrorAlert] = useState<boolean>(false);
 
@@ -66,11 +65,10 @@ export default function SaveLink() {
       return;
     }
     // Logic to save the link
-    const newLink: LinkProps = { url, categories, id: Date.now() };
+    const newLink: LinkProps = { url, id: Date.now() };
     console.log("Link saved:", newLink);
     addBookmark(newLink);
     setUrl("");
-    //setCategories([]);
   };
 
   return (
