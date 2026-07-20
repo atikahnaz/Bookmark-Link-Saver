@@ -1,18 +1,19 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SaveLink from "./components/SaveLink";
 import Homepage from "./components/Homepage";
 
 interface LinkProps {
   url: string;
   categories?: string[];
+  id: number;
 }
 
 export default function Home() {
   const [links, setLinks] = useState<LinkProps[]>([]);
 
-  const updateLinkList = (link: LinkProps) => {
+  const saveLinkList = (link: LinkProps) => {
     if (link.url) {
       // Do not update if link already exist
       if (links.some((l) => l.url === link.url)) {
@@ -20,39 +21,36 @@ export default function Home() {
         alert("Link already exists");
         return;
       }
-      setLinks((prev) => [...prev, link]);
-      console.log("Links updated:", links);
+      setLinks(
+        (prev) => [...prev, link],
+        //const next = [...prev, link];
+        //console.log("Links updated:", next);
+        //return next;
+      );
     } else {
       alert("Please Enter url");
     }
   };
 
-  const handleUpdateLink = (updatedLink: LinkProps, index: number) => {
+  useEffect(() => {
+    console.log("Links updated:", links);
+  }, [links]);
+
+  const handleUpdateLink = (updatedLink: LinkProps, id: number) => {
     setLinks((prev) =>
-      prev.map((link, i) => (i === index ? updatedLink : link)),
+      prev.map((link) => (link.id === id ? updatedLink : link)),
     );
     console.log("Link updated:", updatedLink);
   };
 
   return (
     <>
-      <main className="flex min-h-screen flex-col p-10">
-        <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-          <h1>Bookmark Link Saver</h1>
-          <SaveLink updateLinkList={updateLinkList} />
+      <main>
+        <div className="z-10 w-full items-center justify-between font-mono text-sm lg:max-w-3/4">
+          <SaveLink />
         </div>
         <div>
-          <h2>Saved Links:</h2>
-          <Homepage links={links} onUpdateLink={handleUpdateLink} />
-          {/* <div>
-            {links.map((link, index) => (
-              <div className="border">
-                <a key={index} href={link.url}>
-                  {link.url}
-                </a>
-              </div>
-            ))}
-          </div> */}
+          <Homepage />
         </div>
       </main>
     </>
